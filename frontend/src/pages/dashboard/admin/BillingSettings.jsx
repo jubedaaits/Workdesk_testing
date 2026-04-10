@@ -73,7 +73,7 @@ const BillingSettings = () => {
           // console.log('API response indicates success but no data returned');
         }
       } catch (apiError) {
-        // console.log('API not available, settings saved only to localStorage');
+        console.log('API not available, settings saved only to localStorage');
         // Don't show error to user since localStorage save worked
       }
       

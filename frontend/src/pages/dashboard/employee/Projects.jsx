@@ -473,7 +473,7 @@ const ProjectManagement = () => {
       await fetchAllData();
       alert(`✅ Updated: ${updatedCount} tasks | Created: ${createdCount} new tasks`);
       if (errors.length > 0) {
-        console.error('Errors:', errors);
+        // console.error('Errors:', errors);
       }
     } else {
       alert('No changes detected');
@@ -707,7 +707,7 @@ const ProjectManagement = () => {
 
   const handleEmployeeSelection = (employeeId) => {
     if (!employeeId || employeeId === 'null' || employeeId === 'undefined' || employeeId === '') {
-      console.warn('Invalid employee ID attempted:', employeeId);
+      // console.warn('Invalid employee ID attempted:', employeeId);
       return;
     }
     const id = String(employeeId).trim();

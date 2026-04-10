@@ -31,7 +31,7 @@ const AttendanceTable = () => {
       setLoading(true);
       
       const response = await attendanceAPI.getMyHistory();
-      console.log('📊 Attendance history response:', response.data);
+      // console.log('📊 Attendance history response:', response.data);
       
       if (response.data.success) {
         // FIXED: Check if history exists and map correctly
@@ -65,7 +65,7 @@ const AttendanceTable = () => {
   const fetchTodayAttendance = async () => {
     try {
       const response = await attendanceAPI.getMyTodayAttendance();
-      console.log('Today\'s attendance:', response.data);
+      // console.log('Today\'s attendance:', response.data);
       // Don't try to access properties that might not exist
       if (response.data && response.data.attendance) {
         // You can use this data to show current status if needed
@@ -338,18 +338,18 @@ const AttendanceTable = () => {
 
 const handleQuickCheckIn = async () => {
     try {
-        console.log('📝 Attempting check-in...');
+        // console.log('📝 Attempting check-in...');
         
         const attendanceData = {
             type: 'check_in',
             date: new Date().toISOString().split('T')[0]
         };
         
-        console.log('📤 Sending data:', attendanceData);
+        // console.log('📤 Sending data:', attendanceData);
         
         const response = await attendanceAPI.markMyAttendance(attendanceData);
         
-        console.log('📥 Response:', response.data);
+        // console.log('📥 Response:', response.data);
         
         if (response.data.success) {
             await fetchAttendanceHistory();

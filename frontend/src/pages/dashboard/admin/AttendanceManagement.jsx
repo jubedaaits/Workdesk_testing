@@ -43,27 +43,27 @@ const AttendanceManagement = () => {
   }, []);
 // Add this function right after your state declarations (around line 50)
 const debugAttendanceData = () => {
-  console.log('===== DEBUG ATTENDANCE DATA =====');
-  console.log('Employees count:', employees.length);
-  console.log('First 3 employees:', employees.slice(0, 3).map(e => ({ id: e.id, name: e.name })));
-  console.log('Attendance count:', attendanceData.length);
-  console.log('Attendance records:', attendanceData.map(a => ({ employee_id: a.employee_id, status: a.status, date: a.date })));
+  // console.log('===== DEBUG ATTENDANCE DATA =====');
+  // console.log('Employees count:', employees.length);
+  // console.log('First 3 employees:', employees.slice(0, 3).map(e => ({ id: e.id, name: e.name })));
+  // console.log('Attendance count:', attendanceData.length);
+  // console.log('Attendance records:', attendanceData.map(a => ({ employee_id: a.employee_id, status: a.status, date: a.date })));
   
   // Check if employee IDs match attendance employee_ids
   const employeeIds = employees.map(e => e.id);
   const attendanceIds = attendanceData.map(a => a.employee_id);
-  console.log('Employee IDs:', employeeIds);
-  console.log('Attendance employee_ids:', attendanceIds);
+  // console.log('Employee IDs:', employeeIds);
+  // console.log('Attendance employee_ids:', attendanceIds);
   
   // Find matches
   const matches = employeeIds.filter(id => attendanceIds.includes(id));
-  console.log('Matching IDs:', matches);
+  // console.log('Matching IDs:', matches);
   
   // Check specific employee AITS001
   const specificEmp = employees.find(e => e.id === 'AITS001');
   const specificAtt = attendanceData.find(a => a.employee_id === 'AITS001');
-  console.log('Employee AITS001:', specificEmp);
-  console.log('Attendance for AITS001:', specificAtt);
+  // console.log('Employee AITS001:', specificEmp);
+  // console.log('Attendance for AITS001:', specificAtt);
 };
 
 // Add a debug button in the header (temporary)
@@ -76,21 +76,21 @@ const debugAttendanceData = () => {
     setError(null);
 
     const today = new Date().toISOString().split('T')[0];
-    console.log('📅 Today\'s date:', today);
+    // console.log('📅 Today\'s date:', today);
 
     const [employeesResponse, attendanceResponse] = await Promise.all([
       employeeAPI.getAll().catch(err => {
-        console.error('Employee API error:', err);
+        // console.error('Employee API error:', err);
         return { data: { employees: [] } };
       }),
       attendanceAPI.getAll({ date: today }).catch(err => {
-        console.error('Attendance API error:', err);
+        // console.error('Attendance API error:', err);
         return { data: { attendance: [] } };
       })
     ]);
 
-    console.log('📊 Employees response:', employeesResponse.data);
-    console.log('📊 Attendance response:', attendanceResponse.data);
+    // console.log('📊 Employees response:', employeesResponse.data);
+    // console.log('📊 Attendance response:', attendanceResponse.data);
 
     // Extract employees - handle different response structures
     let employeesList = [];
@@ -112,8 +112,8 @@ const debugAttendanceData = () => {
       attendanceList = attendanceResponse.data.data;
     }
 
-    console.log('📊 Employees count:', employeesList.length);
-    console.log('📊 Attendance count:', attendanceList.length);
+    // console.log('📊 Employees count:', employeesList.length);
+    // console.log('📊 Attendance count:', attendanceList.length);
 
     // Format employees - use employee_id as id
     const formattedEmployees = employeesList.map(emp => ({
@@ -127,7 +127,7 @@ const debugAttendanceData = () => {
       status: emp.status
     }));
     
-    console.log('📊 Formatted employees:', formattedEmployees.map(e => ({ id: e.id, name: e.name })));
+    // console.log('📊 Formatted employees:', formattedEmployees.map(e => ({ id: e.id, name: e.name })));
     setEmployees(formattedEmployees);
 
     // Format attendance
@@ -142,7 +142,7 @@ const debugAttendanceData = () => {
       deduction_amount: att.deduction_amount
     }));
     
-    console.log('📊 Formatted attendance:', formattedAttendance.map(a => ({ employee_id: a.employee_id, status: a.status })));
+    // console.log('📊 Formatted attendance:', formattedAttendance.map(a => ({ employee_id: a.employee_id, status: a.status })));
     setAttendanceData(formattedAttendance);
 
   } catch (err) {
@@ -627,7 +627,7 @@ const debugAttendanceData = () => {
       return;
     }
 
-    console.log('🔄 Enrolling face for:', employee.id, employee.name);
+    // console.log('🔄 Enrolling face for:', employee.id, employee.name);
 
     setFaceValidation({ isValid: false, message: 'Processing image...' });
     
@@ -635,13 +635,13 @@ const debugAttendanceData = () => {
     const blob = await fetch(capturedImage).then(res => res.blob());
     const imageFile = new File([blob], 'face-image.jpg', { type: 'image/jpeg' });
 
-    console.log('📁 File size:', imageFile.size);
+    // console.log('📁 File size:', imageFile.size);
 
     setFaceValidation({ isValid: false, message: 'Uploading to server...' });
 
     const response = await employeeAPI.enrollFace(employee.id, imageFile);
 
-    console.log('✅ API Response:', response.data);
+    // console.log('✅ API Response:', response.data);
 
     if (response.data.success) {
       alert(`✅ ${response.data.message}`);
@@ -842,7 +842,7 @@ const debugAttendanceData = () => {
 
 const getEmployeeAttendance = (employeeId) => {
   // Debug log
-  console.log(`🔍 Looking for employee ID: "${employeeId}"`);
+  // console.log(`🔍 Looking for employee ID: "${employeeId}"`);
   
   // Find attendance for this employee
   const attendance = attendanceData.find(att => {
@@ -852,7 +852,7 @@ const getEmployeeAttendance = (employeeId) => {
   });
   
   if (attendance) {
-    console.log(`✅ Found attendance for ${employeeId}:`, attendance);
+    // console.log(`✅ Found attendance for ${employeeId}:`, attendance);
     
     // Map the status - convert "Half Day" to "Delayed" for display
     let displayStatus = attendance.status;

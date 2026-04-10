@@ -59,7 +59,7 @@ const Dashboard = () => {
         return employee;
 
       } catch (err) {
-        // console.error('Error fetching employee data:', err);
+        console.error('Error fetching employee data:', err);
         setError(err.message || 'Failed to load employee data');
         return null;
       }
@@ -209,7 +209,7 @@ const Dashboard = () => {
       const employeeId = employee.employee_id || employee.id;
       
       if (!employeeId) {
-        console.error('❌ Employee ID not found in:', employee);
+        // console.error('❌ Employee ID not found in:', employee);
         return 95; // Default value
       }
       
@@ -230,7 +230,7 @@ const Dashboard = () => {
       return percentage;
       
     } catch (error) {
-      // console.error('❌ Error calculating attendance:', error);
+      console.error('❌ Error calculating attendance:', error);
       
       // Check error type
       if (error.response?.status === 404) {

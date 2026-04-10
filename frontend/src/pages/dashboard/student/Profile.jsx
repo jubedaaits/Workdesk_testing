@@ -60,7 +60,7 @@ const Dashboard = () => {
           courses = coursesResponse.data.courses || [];
           // console.log('Student courses:', courses);
         } catch (courseErr) {
-          // console.error('Error fetching courses:', courseErr);
+          console.error('Error fetching courses:', courseErr);
           // Continue without courses data
         }
 

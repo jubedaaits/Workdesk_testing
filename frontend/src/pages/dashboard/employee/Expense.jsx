@@ -174,11 +174,11 @@ const ExpenseTable = () => {
  const handleSubmit = async (e) => {
   e.preventDefault();
   
-  console.log('=== FORM VALIDATION ===');
-  console.log('category_id:', formData.category_id);
-  console.log('amount:', formData.amount);
-  console.log('description:', formData.description);
-  console.log('receiptImage:', receiptImage);
+  // console.log('=== FORM VALIDATION ===');
+  // console.log('category_id:', formData.category_id);
+  // console.log('amount:', formData.amount);
+  // console.log('description:', formData.description);
+  // console.log('receiptImage:', receiptImage);
   
   if (!formData.category_id || !formData.amount || !formData.description) {
     alert('Please fill in all required fields');
@@ -204,16 +204,16 @@ const ExpenseTable = () => {
     }
 
     // Log FormData contents
-    console.log('=== FormData Contents ===');
+    // console.log('=== FormData Contents ===');
     for (let pair of submitData.entries()) {
-      console.log(pair[0], pair[1] instanceof File ? `File: ${pair[1].name} (${pair[1].size} bytes)` : pair[1]);
+      // console.log(pair[0], pair[1] instanceof File ? `File: ${pair[1].name} (${pair[1].size} bytes)` : pair[1]);
     }
 
-    console.log('=== Sending Request ===');
-    console.log('URL:', '/expenses');
+    // console.log('=== Sending Request ===');
+    // console.log('URL:', '/expenses');
     
     const response = await expenseAPI.create(submitData);
-    console.log('=== Success Response ===', response);
+    // console.log('=== Success Response ===', response);
     
     // Reset form
     setFormData({

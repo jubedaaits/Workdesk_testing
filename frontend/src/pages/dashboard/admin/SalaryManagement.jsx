@@ -109,9 +109,9 @@ const SalaryManagement = () => {
         salaryAPI.getDepartments()
       ]);
       
-      console.log('Raw salary records:', recordsResponse.data);
-      console.log('Employees response:', employeesResponse.data);
-      console.log('Departments response:', departmentsResponse.data);
+      // console.log('Raw salary records:', recordsResponse.data);
+      // console.log('Employees response:', employeesResponse.data);
+      // console.log('Departments response:', departmentsResponse.data);
       
       // Extract employees array
       let employeesList = [];
@@ -133,8 +133,8 @@ const SalaryManagement = () => {
         departmentsList = departmentsResponse.data.data;
       }
       
-      console.log('Extracted employees list:', employeesList);
-      console.log('Extracted departments list:', departmentsList);
+      // console.log('Extracted employees list:', employeesList);
+      // console.log('Extracted departments list:', departmentsList);
       
       const normalizedEmployees = employeesList.map(emp => ({
         id: String(emp.id || emp.employee_id || emp.employee_code),
@@ -152,8 +152,8 @@ const SalaryManagement = () => {
         name: dept.name || dept.department_name
       })).filter(dept => dept.id);
       
-      console.log('Normalized employees:', normalizedEmployees);
-      console.log('Normalized departments:', normalizedDepartments);
+      // console.log('Normalized employees:', normalizedEmployees);
+      // console.log('Normalized departments:', normalizedDepartments);
       
       setEmployees(normalizedEmployees);
       setDepartments(normalizedDepartments);
@@ -279,17 +279,17 @@ const SalaryManagement = () => {
 
   const handleEmployeeSelect = async (e) => {
     const selectedValue = e.target.value;
-    console.log('Selected value:', selectedValue);
-    console.log('All employees:', employees);
+    // console.log('Selected value:', selectedValue);
+    // console.log('All employees:', employees);
     
     if (!selectedValue) {
-      console.log('No employee selected');
+      // console.log('No employee selected');
       return;
     }
     
     const selectedEmployee = employees.find(emp => emp.id === selectedValue);
     
-    console.log('Found employee:', selectedEmployee);
+    // console.log('Found employee:', selectedEmployee);
     
     if (selectedEmployee) {
       setFormData(prev => ({
@@ -314,16 +314,17 @@ const SalaryManagement = () => {
   };
 
   const handleMonthYearChange = async () => {
-    console.log('Month/Year changed:', { 
-      calculate_from_attendance: formData.calculate_from_attendance,
-      employee_id: formData.employee_id,
-      month: formData.month, 
-      year: formData.year 
-    });
+    // console.log('Month/Year changed:',
+    //    { 
+    //   calculate_from_attendance: formData.calculate_from_attendance,
+    //   employee_id: formData.employee_id,
+    //   month: formData.month, 
+    //   year: formData.year 
+    // });
     
     if (formData.calculate_from_attendance && formData.employee_id && formData.month && formData.year) {
       const employee = employees.find(emp => emp.id === formData.employee_id);
-      console.log('Found employee for calculation:', employee);
+      // console.log('Found employee for calculation:', employee);
       
       if (employee && employee.salary) {
         await calculateSalaryFromAttendance(
@@ -434,14 +435,14 @@ const handleSubmit = async (e) => {
             // netSalary is basic - attendance deductions + allowances - manual deductions
             netSalary = calculationData.final_salary + totalAllowances - totalManualDeductions;
             
-            console.log('💰 Salary calculation:', {
-                basicSalary: formData.basic_salary,
-                attendanceDeduction: deductionAmount,
-                finalAttendanceSalary: calculationData.final_salary,
-                allowances: totalAllowances,
-                manualDeductions: totalManualDeductions,
-                netSalary
-            });
+            // console.log('💰 Salary calculation:', {
+            //     basicSalary: formData.basic_salary,
+            //     attendanceDeduction: deductionAmount,
+            //     finalAttendanceSalary: calculationData.final_salary,
+            //     allowances: totalAllowances,
+            //     manualDeductions: totalManualDeductions,
+            //     netSalary
+            // });
             
         } catch (err) {
             console.error('Attendance calculation failed:', err);
@@ -522,7 +523,7 @@ const getTotalDeductionsWithAttendance = (deductions) => {
         }
     });
     
-    console.log('💰 Calculating total deductions:', deductions, 'Total:', total);
+    // console.log('💰 Calculating total deductions:', deductions, 'Total:', total);
     return total;
 };
 // In SalaryManagement.jsx - Update the auto-calculation useEffect

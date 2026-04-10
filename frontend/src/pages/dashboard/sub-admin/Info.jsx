@@ -21,7 +21,7 @@ const Dashboard = () => {
       }
       return null;
     } catch (err) {
-      // console.error('Error fetching employees list:', err);
+      console.error('Error fetching employees list:', err);
       return null;
     }
   };

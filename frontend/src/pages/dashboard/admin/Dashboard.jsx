@@ -94,8 +94,7 @@ const Dashboard = ({ user, navigateToTab }) => {
   };
 
 const handleEmployeeClick = (employeeName) => {
-  console.log('Clicking employee:', employeeName);
-  // Make sure we're passing the filter correctly
+
   navigateToTab('reports', { 
     filterByEmployee: employeeName,
     fromDashboard: true

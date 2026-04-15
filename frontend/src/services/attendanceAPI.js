@@ -130,4 +130,19 @@ export const attendanceAPI = {
       return { data: { attendance: todayRecord ? [todayRecord] : [] } };
     });
   },
+  // Add this method
+markAbsentByEmployee: async (employeeId, date) => {
+  try {
+    const response = await api.post('/attendance/mark-absent-employee', {
+      employee_id: employeeId,
+      date: date,
+      status: 'Absent',
+      remarks: 'Auto-marked absent - No attendance recorded during work hours (9 AM - 6 PM)'
+    });
+    return response;
+  } catch (error) {
+    console.error('Error marking employee absent:', error);
+    throw error;
+  }
+},
 };

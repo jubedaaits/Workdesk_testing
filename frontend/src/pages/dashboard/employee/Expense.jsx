@@ -106,30 +106,26 @@ const ExpenseTable = () => {
 
   const loadCategories = async () => {
   try {
-    console.log('=== Loading Categories ===');
+
     const response = await expenseAPI.getCategories();
-    console.log('Categories API Response:', response);
-    console.log('Response data:', response.data);
+   
     
     let categoriesData = [];
     
     if (response.data?.categories) {
       categoriesData = response.data.categories;
-      console.log('Found categories in response.data.categories:', categoriesData);
+    
     } else if (response.data?.data) {
       categoriesData = response.data.data;
-      console.log('Found categories in response.data.data:', categoriesData);
+   
     } else if (Array.isArray(response.data)) {
       categoriesData = response.data;
-      console.log('Response is array:', categoriesData);
+
     }
     
-    console.log('Final categories loaded:', categoriesData);
+
     setCategories(categoriesData);
-    
-    if (categoriesData.length === 0) {
-      console.warn('No categories loaded! Check if expense_categories table has data for this tenant.');
-    }
+   
   } catch (error) {
     console.error('=== Error Loading Categories ===');
     console.error('Error:', error);
@@ -174,11 +170,7 @@ const ExpenseTable = () => {
  const handleSubmit = async (e) => {
   e.preventDefault();
   
-  console.log('=== FORM VALIDATION ===');
-  console.log('category_id:', formData.category_id);
-  console.log('amount:', formData.amount);
-  console.log('description:', formData.description);
-  console.log('receiptImage:', receiptImage);
+ 
   
   if (!formData.category_id || !formData.amount || !formData.description) {
     alert('Please fill in all required fields');
@@ -203,17 +195,14 @@ const ExpenseTable = () => {
       submitData.append('image', receiptImage);
     }
 
-    // Log FormData contents
-    console.log('=== FormData Contents ===');
     for (let pair of submitData.entries()) {
-      console.log(pair[0], pair[1] instanceof File ? `File: ${pair[1].name} (${pair[1].size} bytes)` : pair[1]);
+   
     }
 
-    console.log('=== Sending Request ===');
-    console.log('URL:', '/expenses');
+  
     
     const response = await expenseAPI.create(submitData);
-    console.log('=== Success Response ===', response);
+  
     
     // Reset form
     setFormData({
@@ -228,8 +217,7 @@ const ExpenseTable = () => {
     await loadExpenses();
     alert('Expense submitted successfully!');
   } catch (error) {
-    console.error('=== ERROR DETAILS ===');
-    console.error('Error object:', error);
+
     console.error('Error response:', error.response);
     console.error('Error response data:', error.response?.data);
     console.error('Error response status:', error.response?.status);

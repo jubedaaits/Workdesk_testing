@@ -227,7 +227,7 @@ delete: async (tenantId, id) => {
     
     const tablesToCheck = [
       'project_phases',
-      'project_team_members', 
+      'team_members', 
       'project_history',
       'tasks',
       'project_documents',
@@ -430,7 +430,7 @@ delete: async (tenantId, id) => {
           CONCAT(u.first_name, ' ', u.last_name) as name,
           d.name as department,
           ed.position
-        FROM project_team_members ptm
+        FROM team_members ptm
         JOIN employee_details ed ON ptm.employee_id = ed.id
         JOIN users u ON ed.user_id = u.id
         LEFT JOIN departments d ON ed.department_id = d.id
@@ -468,7 +468,7 @@ delete: async (tenantId, id) => {
 
       // Remove existing team members
       await connection.execute(
-        'DELETE FROM project_team_members WHERE project_id = ? AND tenant_id = ?',
+        'DELETE FROM team_members WHERE project_id = ? AND tenant_id = ?',
         [projectId, tenantId]
       );
 
@@ -476,7 +476,7 @@ delete: async (tenantId, id) => {
       if (teamData.team && teamData.team.length > 0) {
         const teamValues = teamData.team.map(employeeId => [tenantId, projectId, employeeId]);
         await connection.query(
-          'INSERT INTO project_team_members (tenant_id, project_id, employee_id) VALUES ?',
+          'INSERT INTO team_members (tenant_id, project_id, employee_id) VALUES ?',
           [teamValues]
         );
       }

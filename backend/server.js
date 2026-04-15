@@ -26,6 +26,7 @@ const deliveryRoutes = require('./routes/deliveryRoutes');
 const serviceSettingRoutes = require('./routes/serviceSettingRoutes');
 const studentAttendanceRoutes = require('./routes/studentAttendanceRoutes');
 const offerLetterRoutes = require('./routes/offerLetterRoutes');
+
 const brandingRoutes = require('./routes/brandingRoutes');
 const resignationRoutes = require('./routes/resignationRoutes');
 const experienceLetterRoutes = require('./routes/experienceLetterRoutes');
@@ -35,6 +36,8 @@ const { scheduleAutoAbsentCron } = require('./cron/attendanceCron');
 const teamRoutes = require('./routes/teamRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const dailyReportRoutes = require('./routes/dailyReportRoutes');
+const declarationFormRoutes = require('./routes/declarationFormRoutes');
+
 scheduleAutoAbsentCron();
 
 const app = express();
@@ -137,6 +140,7 @@ app.use('/api/tasks', taskRoutes);           // Add this
 app.use('/api/daily-reports', dailyReportRoutes); 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/uploads', express.static('uploads'));
+app.use('/api/declaration-form', declarationFormRoutes);
 
 // Basic route
 app.get('/', (req, res) => {

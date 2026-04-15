@@ -41,8 +41,7 @@ const fetchDocs = async () => {
   try {
     setLoading(true);
     setError(null);
-    
-    console.log("Fetching all documents...");
+ 
     
     // Get current user from localStorage
     const userStr = localStorage.getItem('user');
@@ -50,7 +49,7 @@ const fetchDocs = async () => {
     
     try {
       currentUser = JSON.parse(userStr || '{}');
-      console.log("Logged in user:", currentUser.email || currentUser.id);
+    
     } catch (e) {
       console.error("Error parsing user data:", e);
     }
@@ -64,7 +63,7 @@ const fetchDocs = async () => {
       incrementLetterAPI.getMyLetters()
     ]);
     
-    console.log("Salary Response (my records):", salaryRes.data);
+
     
     // Handle Offer Letters
     let offerLettersData = [];
@@ -78,7 +77,7 @@ const fetchDocs = async () => {
     let salaryData = [];
     if (salaryRes.data) {
       if (salaryRes.data.salaryRecords && Array.isArray(salaryRes.data.salaryRecords)) {
-        console.log("Found salaryRecords:", salaryRes.data.salaryRecords.length);
+      
         salaryData = salaryRes.data.salaryRecords;
       } 
       else if (Array.isArray(salaryRes.data)) {
@@ -92,12 +91,7 @@ const fetchDocs = async () => {
       }
     }
     
-    console.log("My salary records:", salaryData.length);
-    if (salaryData.length > 0) {
-      console.log("First salary record:", salaryData[0]);
-    }
-    
-    // No need to filter by employee - backend already did it!
+ 
     setSlips(salaryData);
     
     // Handle Resignations
@@ -159,7 +153,7 @@ const fetchDocs = async () => {
 
 const handleDocAction = async (type, action, doc) => {
   try {
-    console.log("Document action:", type, action);
+
     
     if (type === 'offer') {
       if (action === 'view') await offerLetterPDFService.viewOfferLetter(doc.form_data);
@@ -179,7 +173,7 @@ const handleDocAction = async (type, action, doc) => {
       let backendBaseUrl = API_BASE_URL?.replace('/api', '') || 'http://localhost:8000';
       let finalUrl = pdfUrl.startsWith('http') ? pdfUrl : backendBaseUrl + (pdfUrl.startsWith('/') ? pdfUrl : '/' + pdfUrl);
       
-      console.log("Opening PDF:", finalUrl);
+  
       window.open(finalUrl, "_blank");
     }
   } catch (err) {

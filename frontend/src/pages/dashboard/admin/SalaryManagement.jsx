@@ -109,9 +109,7 @@ const SalaryManagement = () => {
         salaryAPI.getDepartments()
       ]);
       
-      console.log('Raw salary records:', recordsResponse.data);
-      console.log('Employees response:', employeesResponse.data);
-      console.log('Departments response:', departmentsResponse.data);
+    
       
       // Extract employees array
       let employeesList = [];
@@ -133,8 +131,7 @@ const SalaryManagement = () => {
         departmentsList = departmentsResponse.data.data;
       }
       
-      console.log('Extracted employees list:', employeesList);
-      console.log('Extracted departments list:', departmentsList);
+    
       
       const normalizedEmployees = employeesList.map(emp => ({
         id: String(emp.id || emp.employee_id || emp.employee_code),
@@ -152,8 +149,7 @@ const SalaryManagement = () => {
         name: dept.name || dept.department_name
       })).filter(dept => dept.id);
       
-      console.log('Normalized employees:', normalizedEmployees);
-      console.log('Normalized departments:', normalizedDepartments);
+    
       
       setEmployees(normalizedEmployees);
       setDepartments(normalizedDepartments);
@@ -279,17 +275,12 @@ const SalaryManagement = () => {
 
   const handleEmployeeSelect = async (e) => {
     const selectedValue = e.target.value;
-    console.log('Selected value:', selectedValue);
-    console.log('All employees:', employees);
+
     
-    if (!selectedValue) {
-      console.log('No employee selected');
-      return;
-    }
+   
     
     const selectedEmployee = employees.find(emp => emp.id === selectedValue);
-    
-    console.log('Found employee:', selectedEmployee);
+   
     
     if (selectedEmployee) {
       setFormData(prev => ({
@@ -308,22 +299,17 @@ const SalaryManagement = () => {
         );
       }
     } else {
-      console.error('Employee not found with ID:', selectedValue);
+    
       alert('Please select a valid employee from the list');
     }
   };
 
   const handleMonthYearChange = async () => {
-    console.log('Month/Year changed:', { 
-      calculate_from_attendance: formData.calculate_from_attendance,
-      employee_id: formData.employee_id,
-      month: formData.month, 
-      year: formData.year 
-    });
+   
     
     if (formData.calculate_from_attendance && formData.employee_id && formData.month && formData.year) {
       const employee = employees.find(emp => emp.id === formData.employee_id);
-      console.log('Found employee for calculation:', employee);
+    
       
       if (employee && employee.salary) {
         await calculateSalaryFromAttendance(
@@ -434,14 +420,7 @@ const handleSubmit = async (e) => {
             // netSalary is basic - attendance deductions + allowances - manual deductions
             netSalary = calculationData.final_salary + totalAllowances - totalManualDeductions;
             
-            console.log('💰 Salary calculation:', {
-                basicSalary: formData.basic_salary,
-                attendanceDeduction: deductionAmount,
-                finalAttendanceSalary: calculationData.final_salary,
-                allowances: totalAllowances,
-                manualDeductions: totalManualDeductions,
-                netSalary
-            });
+         
             
         } catch (err) {
             console.error('Attendance calculation failed:', err);
@@ -522,7 +501,7 @@ const getTotalDeductionsWithAttendance = (deductions) => {
         }
     });
     
-    console.log('💰 Calculating total deductions:', deductions, 'Total:', total);
+  
     return total;
 };
 // In SalaryManagement.jsx - Update the auto-calculation useEffect
@@ -763,21 +742,7 @@ useEffect(() => {
     }
   };
 
-  const handleSendPayslipEmail = async (record) => {
-    const email = prompt(`Enter email address to send payslip to ${record.employee_name}:`, '');
-    
-    if (email && email.includes('@')) {
-      try {
-        await salaryAPI.sendPayslipEmail(record.id, { email });
-        alert(`Payslip sent successfully to ${email}`);
-      } catch (err) {
-        console.error('Failed to send payslip email:', err);
-        alert('Failed to send payslip email. Please try again.');
-      }
-    } else if (email) {
-      alert('Please enter a valid email address.');
-    }
-  };
+ 
 
   const handleExport = () => {
     try {
@@ -912,14 +877,7 @@ useEffect(() => {
       >
         Download
       </button>
-      <button
-        type="button"
-        onClick={() => handleSendPayslipEmail(record)}
-        className="salary-payslip-email-btn"
-        style={{ padding: '4px 8px', fontSize: '12px', cursor: 'pointer' }}
-      >
-        Email
-      </button>
+      
     </div>
   );
 

@@ -358,7 +358,7 @@ const teamController = {
         }
     },
 
- getTeamMembers: async (req, res) => {
+getTeamMembers: async (req, res) => {
     try {
         const tenant_id = req.user?.tenant_id || req.tenantId || 1;
         const { teamId } = req.params;
@@ -368,31 +368,36 @@ const teamController = {
         const [members] = await db.execute(`
             SELECT 
                 tm.id as team_member_id,
-                tm.employee_id as employee_detail_id,
-                ed.user_id,
+                u.id as user_id,
                 CONCAT(u.first_name, ' ', u.last_name) as name,
                 u.email,
-                ed.position,
-                u.id as user_id
+                COALESCE(ed.position, 'Team Member') as position,
+                ed.id as employee_detail_id
             FROM team_members tm
-            INNER JOIN employee_details ed ON tm.employee_id = ed.id
-            INNER JOIN users u ON ed.user_id = u.id
+            INNER JOIN users u ON tm.employee_id = u.id
+            LEFT JOIN employee_details ed ON u.id = ed.user_id AND ed.tenant_id = ?
             WHERE tm.team_id = ? 
                 AND tm.is_active = 1
                 AND tm.tenant_id = ?
             ORDER BY u.first_name ASC
-        `, [teamId, tenant_id]);
+        `, [tenant_id, teamId, tenant_id]);
         
-        console.log(`Found ${members.length} members:`, members.map(m => ({
-            name: m.name,
-            employee_detail_id: m.employee_detail_id,
-            user_id: m.user_id
-        })));
+        console.log(`Found ${members.length} members:`, members);
+        
+        // Return both IDs so frontend can use user_id
+        const formattedMembers = members.map(member => ({
+            id: member.user_id,
+            user_id: member.user_id,  // This is the INT user_id
+            employee_detail_id: member.employee_detail_id,  // This is the VARCHAR ID
+            name: member.name,
+            position: member.position || 'Team Member',
+            email: member.email || ''
+        }));
         
         res.json({ 
             success: true, 
-            data: members,
-            count: members.length
+            data: formattedMembers,
+            count: formattedMembers.length
         });
     } catch (error) {
         console.error('Get team members error:', error);

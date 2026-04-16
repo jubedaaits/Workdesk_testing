@@ -24,8 +24,7 @@ import ResignationRequests from '../HR/ResignationRequests.jsx';
 import ExperienceLetters from '../HR/ExperienceLetters.jsx';
 import IncrementLetters from '../HR/IncrementLetters.jsx';
 import EmployeeManagement from './EmployeeManagement.jsx'; // Add this import
-
-
+import DeclarationForm from '../HR/DeclarationForm.jsx'; // Add this import
 const Base = () => {
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem('employeeActiveTab') || 'dashboard';
@@ -186,6 +185,21 @@ const [reportsOpen, setReportsOpen] = useState(false);
         return <ExperienceLetters{...contentProps} />;
       case 'increment-letter':
         return <IncrementLetters{...contentProps} />;
+
+case 'declaration-form':
+        return <DeclarationForm{...contentProps} />;
+      
+
+
+        case 'courses':
+        return <CourseManagement {...contentProps} />;
+      case 'internship':
+        return <InternshipManagement {...contentProps} />;
+
+case 'settings':
+        return <Settings{...contentProps} />;
+
+
       default:
         return <Dashboard {...contentProps} />;
     }
@@ -308,11 +322,11 @@ const [reportsOpen, setReportsOpen] = useState(false);
                 </button>
                 {sidebarOpen && coursesOpen && (
                   <ul className="dropdown-menu">
-                    <li>
+                    {/* <li>
                       <button onClick={() => setActiveTab('student')}>
                         <span className="dropdown-text">Student</span>
                       </button>
-                    </li>
+                    </li> */}
                     <li>
                       <button onClick={() => setActiveTab('courses')}>
                         <span className="dropdown-text">Courses</span>

@@ -7,7 +7,7 @@ import { brandingAPI } from './brandingAPI';
 export const resignationPDFService = {
   generatePDFBlob: async (pdfData) => {
     try {
-      console.log('Generating PDF Blob for Resignation Letter');
+       
       
       let branding = {};
       try {

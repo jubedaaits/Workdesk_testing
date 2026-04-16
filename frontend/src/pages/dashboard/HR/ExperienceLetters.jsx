@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { experienceLetterAPI } from "../../../services/experienceLetterAPI";
 import { experiencePDFService } from "../../../services/experiencePDFService";
+import brandingAPI from "../../../services/brandingAPI";
 import { employeeAPI } from "../../../services/employeeAPI";
 import { API_BASE_URL } from "../../../services/api";
 import { HiOutlineDocumentText, HiOutlineEye, HiOutlinePlus, HiOutlineTrash } from "react-icons/hi2";
@@ -35,8 +36,22 @@ const ExperienceLetters = () => {
         experienceLetterAPI.getAllLetters(),
         employeeAPI.getAll()
       ]);
+      
+      console.log("Employees API Response:", empRes.data);
+      
+      // Handle different response structures
+      let employeesData = [];
+      if (empRes.data?.employees) {
+        employeesData = empRes.data.employees;
+      } else if (empRes.data?.data) {
+        employeesData = empRes.data.data;
+      } else if (Array.isArray(empRes.data)) {
+        employeesData = empRes.data;
+      }
+      
+      console.log("Processed Employees:", employeesData);
+      setEmployees(employeesData);
       setLetters(letRes.data?.data || []);
-      setEmployees(empRes.data?.employees || empRes.data?.data || []);
     } catch (err) {
       console.error("Error fetching data:", err);
     } finally {
@@ -46,14 +61,35 @@ const ExperienceLetters = () => {
 
   const handleEmployeeSelect = (e) => {
     const empId = e.target.value;
-    const emp = employees.find(x => String(x.employee_id) === String(empId) || String(x.user_id) === String(empId));
+    console.log("Selected Employee ID:", empId);
+    
+    if (!empId) {
+      setFormData({
+        ...formData,
+        employee_id: "",
+        date_of_joining: "",
+        last_working_day: "",
+        designation: "",
+        department: ""
+      });
+      return;
+    }
+    
+    // Find employee by various possible ID fields
+    const emp = employees.find(x => {
+      const xId = x.employee_id || x.user_id || x.id;
+      return String(xId) === String(empId);
+    });
+    
+    console.log("Found Employee:", emp);
+    
     if (emp) {
       setFormData({
         ...formData,
-        employee_id: emp.employee_id || emp.user_id,
+        employee_id: emp.employee_id || emp.user_id || emp.id,
         date_of_joining: emp.joining_date ? new Date(emp.joining_date).toISOString().split('T')[0] : "",
         last_working_day: emp.last_working_day ? new Date(emp.last_working_day).toISOString().split('T')[0] : "",
-        designation: emp.designation || emp.position || "",
+        designation: emp.designation || emp.position || emp.role_name || "",
         department: emp.department || ""
       });
     } else {
@@ -65,9 +101,25 @@ const ExperienceLetters = () => {
     e.preventDefault();
     setIsProcessing(true);
     try {
-      const emp = employees.find(x => String(x.employee_id) === String(formData.employee_id) || String(x.user_id) === String(formData.employee_id));
+      const emp = employees.find(x => {
+        const xId = x.employee_id || x.user_id || x.id;
+        return String(xId) === String(formData.employee_id);
+      });
       
-      // Build custom note that includes the exceptional performance text from original document
+      console.log("Employee for generation:", emp);
+      
+      // Fetch latest branding data
+      let branding = {};
+      try {
+        const brandingRes = await brandingAPI.get();
+        if (brandingRes.data?.success && brandingRes.data?.branding) {
+          branding = brandingRes.data.branding;
+          console.log("Branding loaded:", branding);
+        }
+      } catch (err) {
+        console.warn("Could not fetch branding:", err);
+      }
+      
       const defaultCustomNote = `${emp?.first_name || 'The employee'} demonstrated exceptional technical skills, a strong work ethic, and a keen ability to adapt to new challenges. Their contributions have significantly impacted the success of our projects and the overall growth of the company.`;
       
       const pdfData = {
@@ -80,8 +132,23 @@ const ExperienceLetters = () => {
         department: formData.department,
         employmentType: formData.employment_type,
         customNote: formData.custom_note || defaultCustomNote,
-        refNumber: `EXP/${new Date().getFullYear()}/${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`
+        refNumber: `EXP/${new Date().getFullYear()}/${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
+        company: {
+          name: branding.company_name,
+          address: branding.company_address,
+          email: branding.company_email,
+          website: branding.company_website
+        },
+        hr: {
+          name: branding.hr_name,
+          designation: branding.hr_designation,
+          signature: branding.signature_url ? brandingAPI.getImageUrl(branding.signature_url) : null
+        },
+        logo: branding.logo_url ? brandingAPI.getImageUrl(branding.logo_url) : null,
+        stamp: branding.stamp_url ? brandingAPI.getImageUrl(branding.stamp_url) : null
       };
+
+      console.log("PDF Data being sent:", pdfData);
 
       const pdfBlob = await experiencePDFService.generatePDFBlob(pdfData);
 
@@ -93,11 +160,78 @@ const ExperienceLetters = () => {
       setShowGenerateModal(false);
       resetForm();
       fetchData();
+      alert("Experience letter generated successfully!");
     } catch (err) {
       console.error("Error generating experience letter:", err);
       alert("Failed to generate letter. Please try again.");
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handlePreview = async () => {
+    if (!formData.employee_id) {
+      alert("Please select an employee first");
+      return;
+    }
+    
+    const emp = employees.find(x => {
+      const xId = x.employee_id || x.user_id || x.id;
+      return String(xId) === String(formData.employee_id);
+    });
+    
+    if (!formData.date_of_joining || !formData.last_working_day) {
+      alert("Please fill in joining date and last working day");
+      return;
+    }
+    
+    // Fetch latest branding data for preview
+    let branding = {};
+    try {
+      const brandingRes = await brandingAPI.get();
+      if (brandingRes.data?.success && brandingRes.data?.branding) {
+        branding = brandingRes.data.branding;
+      }
+    } catch (err) {
+      console.warn("Could not fetch branding:", err);
+    }
+    
+    const defaultCustomNote = `${emp?.first_name || 'The employee'} demonstrated exceptional technical skills, a strong work ethic, and a keen ability to adapt to new challenges. Their contributions have significantly impacted the success of our projects and the overall growth of the company.`;
+    
+    const pdfData = {
+      employeeName: `${emp?.first_name || ''} ${emp?.last_name || ''}`.trim(),
+      firstName: emp?.first_name || 'The employee',
+      dateOfIssue: formData.date_of_issue,
+      dateOfJoining: formData.date_of_joining,
+      lastWorkingDay: formData.last_working_day,
+      designation: formData.designation,
+      department: formData.department,
+      employmentType: formData.employment_type,
+      customNote: formData.custom_note || defaultCustomNote,
+      refNumber: `PREVIEW/${new Date().getFullYear()}/001`,
+      company: {
+        name: branding.company_name,
+        address: branding.company_address,
+        email: branding.company_email,
+        website: branding.company_website
+      },
+      hr: {
+        name: branding.hr_name,
+        designation: branding.hr_designation,
+        signature: branding.signature_url ? brandingAPI.getImageUrl(branding.signature_url) : null
+      },
+      logo: branding.logo_url ? brandingAPI.getImageUrl(branding.logo_url) : null,
+      stamp: branding.stamp_url ? brandingAPI.getImageUrl(branding.stamp_url) : null
+    };
+    
+    try {
+      const pdfBlob = await experiencePDFService.generatePDFBlob(pdfData);
+      const blobUrl = URL.createObjectURL(pdfBlob);
+      window.open(blobUrl, '_blank');
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+    } catch (err) {
+      console.error("Preview error:", err);
+      alert("Failed to preview letter");
     }
   };
 
@@ -131,45 +265,6 @@ const ExperienceLetters = () => {
     }
   };
 
-  const handlePreview = async () => {
-    if (!formData.employee_id) {
-      alert("Please select an employee first");
-      return;
-    }
-    
-    const emp = employees.find(x => String(x.employee_id) === String(formData.employee_id) || String(x.user_id) === String(formData.employee_id));
-    
-    if (!formData.date_of_joining || !formData.last_working_day) {
-      alert("Please fill in joining date and last working day");
-      return;
-    }
-    
-    const defaultCustomNote = `${emp?.first_name || 'The employee'} demonstrated exceptional technical skills, a strong work ethic, and a keen ability to adapt to new challenges. Their contributions have significantly impacted the success of our projects and the overall growth of the company.`;
-    
-    const pdfData = {
-      employeeName: `${emp?.first_name || ''} ${emp?.last_name || ''}`.trim(),
-      firstName: emp?.first_name || 'The employee',
-      dateOfIssue: formData.date_of_issue,
-      dateOfJoining: formData.date_of_joining,
-      lastWorkingDay: formData.last_working_day,
-      designation: formData.designation,
-      department: formData.department,
-      employmentType: formData.employment_type,
-      customNote: formData.custom_note || defaultCustomNote,
-      refNumber: `PREVIEW/${new Date().getFullYear()}/001`
-    };
-    
-    try {
-      const pdfBlob = await experiencePDFService.generatePDFBlob(pdfData);
-      const blobUrl = URL.createObjectURL(pdfBlob);
-      window.open(blobUrl, '_blank');
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-    } catch (err) {
-      console.error("Preview error:", err);
-      alert("Failed to preview letter");
-    }
-  };
-
   return (
     <div style={{ padding: "30px", background: "#f8fafc", minHeight: "100vh" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
@@ -193,7 +288,7 @@ const ExperienceLetters = () => {
               <th style={{ padding: "16px", borderBottom: "1px solid #e2e8f0" }}>Period</th>
               <th style={{ padding: "16px", borderBottom: "1px solid #e2e8f0" }}>Issue Date</th>
               <th style={{ padding: "16px", borderBottom: "1px solid #e2e8f0", textAlign: "center" }}>Actions</th>
-            </tr>
+             </tr>
           </thead>
           <tbody>
             {isLoading ? (
@@ -238,11 +333,16 @@ const ExperienceLetters = () => {
                   <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px", color: "#334155" }}>Select Employee *</label>
                   <select required style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #cbd5e1" }} value={formData.employee_id} onChange={handleEmployeeSelect}>
                     <option value="">-- Select Employee --</option>
-                    {employees.map(emp => (
-                      <option key={emp.employee_id || emp.user_id} value={emp.employee_id || emp.user_id}>
-                        {emp.first_name} {emp.last_name} - {emp.designation || emp.position || 'No Designation'}
-                      </option>
-                    ))}
+                    {employees.map(emp => {
+                      const empId = emp.employee_id || emp.user_id || emp.id;
+                      const empName = `${emp.first_name || ''} ${emp.last_name || ''}`.trim();
+                      const empDesignation = emp.designation || emp.position || emp.role_name || 'No Designation';
+                      return (
+                        <option key={empId} value={empId}>
+                          {empName} - {empDesignation}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
                 

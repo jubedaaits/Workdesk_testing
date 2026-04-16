@@ -5,16 +5,11 @@ import stampPng from "../../../assets/img/stamp.png";
 import { 
   HiOutlineArrowDownTray,
   HiOutlineDocumentText,
-  HiOutlinePhone,
   HiOutlineEye,
   HiOutlinePencil,
   HiOutlineTrash,
-  HiOutlinePlus,
-  HiOutlineUser,
-  HiOutlineCalendar,
-  HiOutlineEnvelope
+  HiOutlinePlus
 } from "react-icons/hi2";
-import { TfiEmail } from "react-icons/tfi";
 import './DeclarationForm.css';
 import pfDeclarationPDFService from '../../../services/pfDeclarationPDFService';
 import brandingAPI from '../../../services/brandingAPI';
@@ -66,7 +61,21 @@ const DeclarationForm = () => {
     uanNumber: "",
     kycStatus: "",
     transferRequestGenerated: "",
-    employerDate: new Date().toISOString().split('T')[0]
+    employerDate: new Date().toISOString().split('T')[0],
+    undertakingCheck1: true,
+    undertakingCheck2: true,
+    undertakingCheck3: true,
+    undertakingCheck4: true,
+    declarationCheckA: true,
+    declarationCheckB: true,
+    declarationCheckC: true,
+    undertakingText1: "Certified that the particulars are true to the best of my knowledge.",
+    undertakingText2: "I authorize EPFO to use my Aadhar for verification/authentication/KYC purpose for service delivery.",
+    undertakingText3: "Kindly transfer the funds and service details, if applicable, from the previous PF account as declared above to the present P.F. Account.",
+    undertakingText4: "In case of changes in above details, the same will be intimate to employer at the earliest.",
+    declarationTextA: "",
+    declarationTextB: "",
+    declarationTextC: ""
   });
 
   const [branding, setBranding] = useState({
@@ -91,7 +100,29 @@ const DeclarationForm = () => {
           declarationFormAPI.getAll(companyId)
         ]);
         
-        setEmployees(employeesRes.data.employees || employeesRes.data.data || []);
+        let employeesData = [];
+        if (employeesRes.data?.employees) {
+          employeesData = employeesRes.data.employees;
+        } else if (employeesRes.data?.data) {
+          employeesData = employeesRes.data.data;
+        } else if (Array.isArray(employeesRes.data)) {
+          employeesData = employeesRes.data;
+        }
+        
+        const normalizedEmployees = employeesData.map(emp => ({
+          id: emp.employee_id || emp.id,
+          employee_id: emp.employee_id || emp.id,
+          first_name: emp.first_name || '',
+          last_name: emp.last_name || '',
+          email: emp.email || '',
+          phone: emp.phone || emp.mobile || '',
+          date_of_birth: emp.date_of_birth || '',
+          gender: emp.gender || '',
+          marital_status: emp.marital_status || '',
+          father_name: emp.father_name || ''
+        }));
+        
+        setEmployees(normalizedEmployees);
         
         if (brandingRes.data?.success && brandingRes.data?.branding) {
           const b = brandingRes.data.branding;
@@ -108,7 +139,7 @@ const DeclarationForm = () => {
           }));
         }
         
-        setSavedForms(formsRes.data.data || []);
+        setSavedForms(formsRes.data?.data || []);
       } catch (err) {
         console.error("Error fetching data:", err);
       } finally {
@@ -123,13 +154,18 @@ const DeclarationForm = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleCheckboxChange = (field, checked) => {
+    setFormData(prev => ({ ...prev, [field]: checked }));
+  };
+
   const handleEmployeeSelect = (employeeId) => {
-    const match = employees.find(emp => (emp.id || emp.employee_id) === employeeId);
+    const match = employees.find(emp => String(emp.id || emp.employee_id) === String(employeeId));
+    
     if (match) {
       setSelectedEmployeeId(employeeId);
       setFormData(prev => ({
         ...prev,
-        nameOfMember: `${match.first_name} ${match.last_name}`.trim(),
+        nameOfMember: `${match.first_name || ''} ${match.last_name || ''}`.trim(),
         emailId: match.email || "",
         mobileNo: match.phone || "",
         dateOfBirth: match.date_of_birth || "",
@@ -173,7 +209,7 @@ const DeclarationForm = () => {
       
       alert("Form saved successfully!");
       const res = await declarationFormAPI.getAll(companyId);
-      setSavedForms(res.data.data || []);
+      setSavedForms(res.data?.data || []);
       setShowModal(false);
       resetForm();
     } catch (err) {
@@ -184,7 +220,6 @@ const DeclarationForm = () => {
     }
   };
 
-  // View PDF - opens in new tab
   const handleViewPDF = async (formDataToView) => {
     setIsGenerating(true);
     try {
@@ -200,7 +235,6 @@ const DeclarationForm = () => {
     }
   };
 
-  // Download PDF
   const handleDownload = async (formDataToDownload) => {
     setIsGenerating(true);
     try {
@@ -249,7 +283,21 @@ const DeclarationForm = () => {
       uanNumber: "",
       kycStatus: "",
       transferRequestGenerated: "",
-      employerDate: new Date().toISOString().split('T')[0]
+      employerDate: new Date().toISOString().split('T')[0],
+      undertakingCheck1: true,
+      undertakingCheck2: true,
+      undertakingCheck3: true,
+      undertakingCheck4: true,
+      declarationCheckA: true,
+      declarationCheckB: true,
+      declarationCheckC: true,
+      undertakingText1: "Certified that the particulars are true to the best of my knowledge.",
+      undertakingText2: "I authorize EPFO to use my Aadhar for verification/authentication/KYC purpose for service delivery.",
+      undertakingText3: "Kindly transfer the funds and service details, if applicable, from the previous PF account as declared above to the present P.F. Account.",
+      undertakingText4: "In case of changes in above details, the same will be intimate to employer at the earliest.",
+      declarationTextA: "",
+      declarationTextB: "",
+      declarationTextC: ""
     });
     setSelectedEmployeeId("");
     setEditingForm(null);
@@ -267,7 +315,7 @@ const DeclarationForm = () => {
       try {
         await declarationFormAPI.delete(id);
         const res = await declarationFormAPI.getAll(companyId);
-        setSavedForms(res.data.data || []);
+        setSavedForms(res.data?.data || []);
         alert('Deleted successfully');
       } catch (err) {
         alert('Failed to delete');
@@ -278,16 +326,6 @@ const DeclarationForm = () => {
   const formatDate = (dateString) => {
     if (!dateString) return '';
     return new Date(dateString).toLocaleDateString('en-GB');
-  };
-
-  // Get KYC status text for display
-  const getKycStatusText = (kycStatus) => {
-    switch(kycStatus) {
-      case 'not_uploaded': return 'Not uploaded';
-      case 'uploaded_not_approved': return 'Uploaded but not approved';
-      case 'uploaded_approved': return 'Uploaded & approved with DSC';
-      default: return '';
-    }
   };
 
   return (
@@ -321,7 +359,9 @@ const DeclarationForm = () => {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan="6" style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>Loading...</td></tr>
+              <tr>
+                <td colSpan="6" style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>Loading...</td>
+              </tr>
             ) : savedForms.length > 0 ? (
               savedForms.map(form => (
                 <tr key={form.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
@@ -355,165 +395,353 @@ const DeclarationForm = () => {
                         <HiOutlineTrash size={18} />
                       </button>
                     </div>
-                    </td>
-                 </tr>
+                  </td>
+                </tr>
               ))
             ) : (
-              <tr><td colSpan="6" style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>No forms found. Click "Add Information" to create a new EPF declaration form.</td></tr>
+              <tr>
+                <td colSpan="6" style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>No forms found. Click "Add Information" to create a new EPF declaration form.</td>
+              </tr>
             )}
           </tbody>
         </table>
       </div>
 
-      {/* Modal for Add/Edit Form */}
-      {showModal && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 9999 }}>
-          <div style={{ background: "white", padding: "24px", borderRadius: "12px", width: "800px", maxWidth: "90%", maxHeight: "90vh", overflowY: "auto" }}>
-            <h3 style={{ margin: "0 0 20px 0", color: "#1e293b", borderBottom: "1px solid #e2e8f0", paddingBottom: "10px" }}>
-              {editingForm ? "Edit EPF Declaration Form" : "Add New EPF Declaration Form"}
-            </h3>
+     {/* Modal for Add/Edit Form */}
+{showModal && (
+  <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 9999 }}>
+    <div style={{ background: "white", padding: "24px", borderRadius: "12px", width: "900px", maxWidth: "95%", maxHeight: "90vh", overflowY: "auto" }}>
+      <h3 style={{ margin: "0 0 20px 0", color: "#1e293b", borderBottom: "1px solid #e2e8f0", paddingBottom: "10px" }}>
+        {editingForm ? "Edit EPF Declaration Form" : "Add New EPF Declaration Form"}
+      </h3>
+      
+      <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+          {/* Select Employee */}
+          <div style={{ gridColumn: "span 2" }}>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px", color: "#334155" }}>Select Employee *</label>
+            <select 
+              required 
+              style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #cbd5e1" }} 
+              value={selectedEmployeeId} 
+              onChange={(e) => handleEmployeeSelect(e.target.value)}
+            >
+              <option value="">-- Select Employee --</option>
+              {employees.map(emp => {
+                const empId = emp.id || emp.employee_id;
+                return (
+                  <option key={empId} value={empId}>
+                    {emp.first_name} {emp.last_name} ({emp.email})
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+
+          {/* Name of Member */}
+          <div style={{ gridColumn: "span 2" }}>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>1. Name of the member *</label>
+            <input 
+              type="text" 
+              required
+              style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1" }} 
+              value={formData.nameOfMember}
+              onChange={(e) => handleInputChange('nameOfMember', e.target.value)}
+            />
+          </div>
+
+          {/* Father's / Spouse's Name */}
+          <div style={{ gridColumn: "span 2" }}>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>2. Father's / Spouse's Name</label>
+            <div style={{ display: "flex", gap: "16px", marginBottom: "8px" }}>
+              <label>
+                <input 
+                  type="radio" 
+                  name="relation" 
+                  value="father" 
+                  checked={formData.selectedRelation === 'father'} 
+                  onChange={() => handleInputChange('selectedRelation', 'father')} 
+                /> Father
+              </label>
+              <label>
+                <input 
+                  type="radio" 
+                  name="relation" 
+                  value="spouse" 
+                  checked={formData.selectedRelation === 'spouse'} 
+                  onChange={() => handleInputChange('selectedRelation', 'spouse')} 
+                /> Spouse
+              </label>
+            </div>
+            <input 
+              type="text" 
+              style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1" }} 
+              placeholder={formData.selectedRelation === 'father' ? "Father's name" : "Spouse's name"}
+              value={formData.selectedRelation === 'father' ? formData.fatherName : formData.spouseName}
+              onChange={(e) => handleInputChange(formData.selectedRelation === 'father' ? 'fatherName' : 'spouseName', e.target.value)}
+            />
+          </div>
+
+          {/* Date of Birth, Gender, Marital Status */}
+          <div>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>3. Date of Birth *</label>
+            <input type="date" required style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1" }} value={formData.dateOfBirth} onChange={(e) => handleInputChange('dateOfBirth', e.target.value)} />
+          </div>
+          <div>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>4. Gender</label>
+            <select style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1" }} value={formData.gender} onChange={(e) => handleInputChange('gender', e.target.value)}>
+              <option value="">Select</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Transgender">Transgender</option>
+            </select>
+          </div>
+          <div>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>5. Marital Status</label>
+            <select style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1" }} value={formData.maritalStatus} onChange={(e) => handleInputChange('maritalStatus', e.target.value)}>
+              <option value="">Select</option>
+              <option value="Married">Married</option>
+              <option value="Unmarried">Unmarried</option>
+              <option value="Widow">Widow</option>
+              <option value="Widower">Widower</option>
+              <option value="Divorce">Divorce</option>
+            </select>
+          </div>
+
+          {/* Email and Mobile */}
+          <div>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>6(a). Email ID *</label>
+            <input type="email" required style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1" }} value={formData.emailId} onChange={(e) => handleInputChange('emailId', e.target.value)} />
+          </div>
+          <div>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>6(b). Mobile No. *</label>
+            <input type="tel" required style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1" }} value={formData.mobileNo} onChange={(e) => handleInputChange('mobileNo', e.target.value)} />
+          </div>
+
+          {/* AADHAR and PAN */}
+          <div>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>AADHAR Number *</label>
+            <input type="text" required placeholder="12 digits" style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1" }} value={formData.aadharNumber} onChange={(e) => handleInputChange('aadharNumber', e.target.value)} />
+          </div>
+          <div>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>PAN Number</label>
+            <input type="text" placeholder="ABCDE1234F" style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1" }} value={formData.panNumber} onChange={(e) => handleInputChange('panNumber', e.target.value.toUpperCase())} />
+          </div>
+
+          {/* UNDERTAKING SECTION */}
+          <div style={{ gridColumn: "span 2", marginTop: "16px", borderTop: "2px solid #4f46e5", paddingTop: "16px", background: "#f8fafc", borderRadius: "8px", padding: "16px" }}>
+            <label style={{ display: "block", marginBottom: "12px", fontWeight: "bold", fontSize: "16px", color: "#1e293b" }}>✅ UNDERTAKING</label>
             
-            <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
-                {/* Select Employee */}
-                <div style={{ gridColumn: "span 2" }}>
-                  <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px", color: "#334155" }}>Select Employee *</label>
-                  <select 
-                    required 
-                    style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #cbd5e1" }} 
-                    value={selectedEmployeeId} 
-                    onChange={(e) => handleEmployeeSelect(Number(e.target.value))}
-                  >
-                    <option value="">-- Select Employee --</option>
-                    {employees.map(emp => (
-                      <option key={emp.employee_id || emp.id} value={emp.employee_id || emp.id}>
-                        {emp.first_name} {emp.last_name} ({emp.email})
-                      </option>
-                    ))}
-                  </select>
-                </div>
+            <div style={{ marginBottom: "12px", display: "flex", alignItems: "flex-start", gap: "10px" }}>
+              <input 
+                type="checkbox" 
+                checked={formData.undertakingCheck1}
+                onChange={(e) => handleCheckboxChange('undertakingCheck1', e.target.checked)}
+                style={{ marginTop: "2px", width: "18px", height: "18px", cursor: "pointer" }}
+              />
+              <label style={{ fontSize: "13px", color: "#334155", lineHeight: "1.4", cursor: "pointer" }}>
+                <strong>1.</strong> {formData.undertakingText1}
+              </label>
+            </div>
+            
+            <div style={{ marginBottom: "12px", display: "flex", alignItems: "flex-start", gap: "10px" }}>
+              <input 
+                type="checkbox" 
+                checked={formData.undertakingCheck2}
+                onChange={(e) => handleCheckboxChange('undertakingCheck2', e.target.checked)}
+                style={{ marginTop: "2px", width: "18px", height: "18px", cursor: "pointer" }}
+              />
+              <label style={{ fontSize: "13px", color: "#334155", lineHeight: "1.4", cursor: "pointer" }}>
+                <strong>2.</strong> {formData.undertakingText2}
+              </label>
+            </div>
+            
+            <div style={{ marginBottom: "12px", display: "flex", alignItems: "flex-start", gap: "10px" }}>
+              <input 
+                type="checkbox" 
+                checked={formData.undertakingCheck3}
+                onChange={(e) => handleCheckboxChange('undertakingCheck3', e.target.checked)}
+                style={{ marginTop: "2px", width: "18px", height: "18px", cursor: "pointer" }}
+              />
+              <label style={{ fontSize: "13px", color: "#334155", lineHeight: "1.4", cursor: "pointer" }}>
+                <strong>3.</strong> {formData.undertakingText3}
+              </label>
+            </div>
+            
+            <div style={{ marginBottom: "12px", display: "flex", alignItems: "flex-start", gap: "10px" }}>
+              <input 
+                type="checkbox" 
+                checked={formData.undertakingCheck4}
+                onChange={(e) => handleCheckboxChange('undertakingCheck4', e.target.checked)}
+                style={{ marginTop: "2px", width: "18px", height: "18px", cursor: "pointer" }}
+              />
+              <label style={{ fontSize: "13px", color: "#334155", lineHeight: "1.4", cursor: "pointer" }}>
+                <strong>4.</strong> {formData.undertakingText4}
+              </label>
+            </div>
+          </div>
 
-                {/* Name of Member */}
-                <div style={{ gridColumn: "span 2" }}>
-                  <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>1. Name of the member *</label>
-                  <input 
-                    type="text" 
-                    required
-                    style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1" }} 
-                    value={formData.nameOfMember}
-                    onChange={(e) => handleInputChange('nameOfMember', e.target.value)}
-                  />
-                </div>
+          {/* DECLARATION SECTION */}
+          <div style={{ gridColumn: "span 2", marginTop: "16px", borderTop: "2px solid #10b981", paddingTop: "16px", background: "#f8fafc", borderRadius: "8px", padding: "16px" }}>
+            <label style={{ display: "block", marginBottom: "12px", fontWeight: "bold", fontSize: "16px", color: "#1e293b" }}>📋 DECLARATION BY PRESENT EMPLOYER</label>
+            
+            <div style={{ marginBottom: "12px", display: "flex", alignItems: "flex-start", gap: "10px" }}>
+              <input 
+                type="checkbox" 
+                checked={formData.declarationCheckA}
+                onChange={(e) => handleCheckboxChange('declarationCheckA', e.target.checked)}
+                style={{ marginTop: "2px", width: "18px", height: "18px", cursor: "pointer" }}
+              />
+              <label style={{ fontSize: "13px", color: "#334155", lineHeight: "1.4", cursor: "pointer" }}>
+                <strong>A.</strong> The member {formData.memberSalutation || 'Mr./Ms.'} {formData.nameOfMember || '________'} has joined on {formData.joiningDate ? formatDate(formData.joiningDate) : '________'} and has been allotted PF Number <strong>{formData.pfNumber || '________'}</strong>
+              </label>
+            </div>
+            
+            <div style={{ marginBottom: "12px", display: "flex", alignItems: "flex-start", gap: "10px" }}>
+              <input 
+                type="checkbox" 
+                checked={formData.declarationCheckB}
+                onChange={(e) => handleCheckboxChange('declarationCheckB', e.target.checked)}
+                style={{ marginTop: "2px", width: "18px", height: "18px", cursor: "pointer" }}
+              />
+              <label style={{ fontSize: "13px", color: "#334155", lineHeight: "1.4", cursor: "pointer" }}>
+                <strong>B.</strong> In case the person was earlier not a member of EPF Scheme, 1952 and EPS, 1995: Post allotment of UAN, the UAN allotted for the member is <strong>{formData.uanNumber || '________'}</strong>
+              </label>
+            </div>
+            
+            <div style={{ marginBottom: "12px", display: "flex", alignItems: "flex-start", gap: "10px" }}>
+              <input 
+                type="checkbox" 
+                checked={formData.declarationCheckC}
+                onChange={(e) => handleCheckboxChange('declarationCheckC', e.target.checked)}
+                style={{ marginTop: "2px", width: "18px", height: "18px", cursor: "pointer" }}
+              />
+              <label style={{ fontSize: "13px", color: "#334155", lineHeight: "1.4", cursor: "pointer" }}>
+                <strong>C.</strong> In case the person was earlier a member of EPF Scheme, 1952 and EPS, 1995: The above PF Account number/UAN of the member has been tagged with his/her UAN/Previous Member ID as declared by member.
+              </label>
+            </div>
+          </div>
 
-                {/* Father's / Spouse's Name */}
-                <div style={{ gridColumn: "span 2" }}>
-                  <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>2. Father's / Spouse's Name</label>
-                  <div style={{ display: "flex", gap: "16px", marginBottom: "8px" }}>
-                    <label><input type="radio" name="relation" value="father" checked={formData.selectedRelation === 'father'} onChange={() => handleInputChange('selectedRelation', 'father')} /> Father</label>
-                    <label><input type="radio" name="relation" value="spouse" checked={formData.selectedRelation === 'spouse'} onChange={() => handleInputChange('selectedRelation', 'spouse')} /> Spouse</label>
-                  </div>
-                  <input 
-                    type="text" 
-                    style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1" }} 
-                    placeholder={formData.selectedRelation === 'father' ? "Father's name" : "Spouse's name"}
-                    value={formData.selectedRelation === 'father' ? formData.fatherName : formData.spouseName}
-                    onChange={(e) => handleInputChange(formData.selectedRelation === 'father' ? 'fatherName' : 'spouseName', e.target.value)}
-                  />
-                </div>
+          {/* Undertaking Date and Place */}
+          <div>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>Undertaking Date</label>
+            <input type="date" style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1" }} value={formData.undertakingDate} onChange={(e) => handleInputChange('undertakingDate', e.target.value)} />
+          </div>
+          <div>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>Place</label>
+            <input type="text" style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1" }} value={formData.undertakingPlace} onChange={(e) => handleInputChange('undertakingPlace', e.target.value)} />
+          </div>
 
-                {/* Date of Birth, Gender, Marital Status */}
-                <div>
-                  <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>3. Date of Birth *</label>
-                  <input type="date" required style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1" }} value={formData.dateOfBirth} onChange={(e) => handleInputChange('dateOfBirth', e.target.value)} />
-                </div>
-                <div>
-                  <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>4. Gender</label>
-                  <select style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1" }} value={formData.gender} onChange={(e) => handleInputChange('gender', e.target.value)}>
-                    <option value="">Select</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Transgender">Transgender</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>5. Marital Status</label>
-                  <select style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1" }} value={formData.maritalStatus} onChange={(e) => handleInputChange('maritalStatus', e.target.value)}>
-                    <option value="">Select</option>
-                    <option value="Married">Married</option>
-                    <option value="Unmarried">Unmarried</option>
-                    <option value="Widow">Widow</option>
-                    <option value="Widower">Widower</option>
-                    <option value="Divorce">Divorce</option>
-                  </select>
-                </div>
+          {/* PF and UAN Numbers */}
+          <div>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>PF Number</label>
+            <input type="text" style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1" }} value={formData.pfNumber} onChange={(e) => handleInputChange('pfNumber', e.target.value)} />
+          </div>
+          <div>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>UAN Number</label>
+            <input type="text" style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1" }} value={formData.uanNumber} onChange={(e) => handleInputChange('uanNumber', e.target.value)} />
+          </div>
 
-                {/* Email and Mobile */}
-                <div>
-                  <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>6(a). Email ID *</label>
-                  <input type="email" required style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1" }} value={formData.emailId} onChange={(e) => handleInputChange('emailId', e.target.value)} />
-                </div>
-                <div>
-                  <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>6(b). Mobile No. *</label>
-                  <input type="tel" required style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1" }} value={formData.mobileNo} onChange={(e) => handleInputChange('mobileNo', e.target.value)} />
-                </div>
+          {/* Joining Date */}
+          <div>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>Joining Date</label>
+            <input type="date" style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1" }} value={formData.joiningDate} onChange={(e) => handleInputChange('joiningDate', e.target.value)} />
+          </div>
+          <div>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>Member Salutation</label>
+            <select style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1" }} value={formData.memberSalutation} onChange={(e) => handleInputChange('memberSalutation', e.target.value)}>
+              <option value="Mr.">Mr.</option>
+              <option value="Ms.">Ms.</option>
+              <option value="Mrs.">Mrs.</option>
+            </select>
+          </div>
 
-                {/* Previous Employment */}
-                <div>
-                  <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>7. Earlier member of EPF Scheme, 1952?</label>
-                  <div style={{ display: "flex", gap: "16px" }}>
-                    <label><input type="radio" name="wasEPF" value="yes" checked={formData.wasEPFMember === 'yes'} onChange={() => handleInputChange('wasEPFMember', 'yes')} /> Yes</label>
-                    <label><input type="radio" name="wasEPF" value="no" checked={formData.wasEPFMember === 'no'} onChange={() => handleInputChange('wasEPFMember', 'no')} /> No</label>
-                  </div>
-                </div>
-                <div>
-                  <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>8. Earlier member of EPS, 1995?</label>
-                  <div style={{ display: "flex", gap: "16px" }}>
-                    <label><input type="radio" name="wasEPS" value="yes" checked={formData.wasEPSMember === 'yes'} onChange={() => handleInputChange('wasEPSMember', 'yes')} /> Yes</label>
-                    <label><input type="radio" name="wasEPS" value="no" checked={formData.wasEPSMember === 'no'} onChange={() => handleInputChange('wasEPSMember', 'no')} /> No</label>
-                  </div>
-                </div>
+          {/* KYC STATUS - Radio buttons */}
+          <div style={{ gridColumn: "span 2", marginTop: "8px" }}>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>KYC Status *</label>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "8px 0" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}>
+                <input 
+                  type="radio" 
+                  name="kycStatus" 
+                  value="not_uploaded" 
+                  checked={formData.kycStatus === 'not_uploaded'} 
+                  onChange={(e) => handleInputChange('kycStatus', e.target.value)}
+                  style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                />
+                <span style={{ fontSize: "13px" }}>Have not been uploaded</span>
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}>
+                <input 
+                  type="radio" 
+                  name="kycStatus" 
+                  value="uploaded_not_approved" 
+                  checked={formData.kycStatus === 'uploaded_not_approved'} 
+                  onChange={(e) => handleInputChange('kycStatus', e.target.value)}
+                  style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                />
+                <span style={{ fontSize: "13px" }}>Have been uploaded but not approved</span>
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}>
+                <input 
+                  type="radio" 
+                  name="kycStatus" 
+                  value="uploaded_approved" 
+                  checked={formData.kycStatus === 'uploaded_approved'} 
+                  onChange={(e) => handleInputChange('kycStatus', e.target.value)}
+                  style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                />
+                <span style={{ fontSize: "13px" }}>Have been uploaded and approved with DSC</span>
+              </label>
+            </div>
+          </div>
 
-                {/* AADHAR and PAN */}
-                <div>
-                  <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>AADHAR Number *</label>
-                  <input type="text" required placeholder="12 digits" style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1" }} value={formData.aadharNumber} onChange={(e) => handleInputChange('aadharNumber', e.target.value)} />
-                </div>
-                <div>
-                  <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>PAN Number</label>
-                  <input type="text" placeholder="ABCDE1234F" style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1" }} value={formData.panNumber} onChange={(e) => handleInputChange('panNumber', e.target.value.toUpperCase())} />
-                </div>
+          {/* TRANSFER REQUEST GENERATED - Radio buttons */}
+          <div style={{ gridColumn: "span 2", marginTop: "8px" }}>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>Transfer Request Generated *</label>
+            <div style={{ display: "flex", gap: "20px", padding: "8px 0" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                <input 
+                  type="radio" 
+                  name="transferRequest" 
+                  value="yes" 
+                  checked={formData.transferRequestGenerated === 'yes'} 
+                  onChange={(e) => handleInputChange('transferRequestGenerated', e.target.value)}
+                  style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                />
+                <span style={{ fontSize: "13px" }}>Yes</span>
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                <input 
+                  type="radio" 
+                  name="transferRequest" 
+                  value="no" 
+                  checked={formData.transferRequestGenerated === 'no'} 
+                  onChange={(e) => handleInputChange('transferRequestGenerated', e.target.value)}
+                  style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                />
+                <span style={{ fontSize: "13px" }}>No</span>
+              </label>
+            </div>
+          </div>
 
-                {/* Undertaking Date and Place */}
-                <div>
-                  <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>Undertaking Date</label>
-                  <input type="date" style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1" }} value={formData.undertakingDate} onChange={(e) => handleInputChange('undertakingDate', e.target.value)} />
-                </div>
-                <div>
-                  <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>Place *</label>
-                  <input type="text" required style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1" }} value={formData.undertakingPlace} onChange={(e) => handleInputChange('undertakingPlace', e.target.value)} />
-                </div>
-
-                {/* PF and UAN Numbers */}
-                <div>
-                  <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>PF Number</label>
-                  <input type="text" style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1" }} value={formData.pfNumber} onChange={(e) => handleInputChange('pfNumber', e.target.value)} />
-                </div>
-                <div>
-                  <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>UAN Number</label>
-                  <input type="text" style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1" }} value={formData.uanNumber} onChange={(e) => handleInputChange('uanNumber', e.target.value)} />
-                </div>
-              </div>
-
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" }}>
-                <button type="button" onClick={() => { setShowModal(false); resetForm(); }} style={{ padding: "8px 16px", background: "#f1f5f9", color: "#475569", border: "none", borderRadius: "6px", cursor: "pointer" }}>Cancel</button>
-                <button type="submit" disabled={isGenerating} style={{ padding: "8px 16px", background: "#4f46e5", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", opacity: isGenerating ? 0.7 : 1 }}>
-                  {isGenerating ? 'Saving...' : (editingForm ? 'Update Form' : 'Save Form')}
-                </button>
-              </div>
-            </form>
+          {/* Employer Date */}
+          <div>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", fontSize: "14px" }}>Employer Declaration Date</label>
+            <input type="date" style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1" }} value={formData.employerDate} onChange={(e) => handleInputChange('employerDate', e.target.value)} />
           </div>
         </div>
-      )}
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" }}>
+          <button type="button" onClick={() => { setShowModal(false); resetForm(); }} style={{ padding: "8px 16px", background: "#f1f5f9", color: "#475569", border: "none", borderRadius: "6px", cursor: "pointer" }}>Cancel</button>
+          <button type="submit" disabled={isGenerating} style={{ padding: "8px 16px", background: "#4f46e5", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", opacity: isGenerating ? 0.7 : 1 }}>
+            {isGenerating ? 'Saving...' : (editingForm ? 'Update Form' : 'Save Form')}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
     </div>
   );
 };

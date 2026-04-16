@@ -301,11 +301,14 @@ const handleGenerateReport = async () => {
       return;
     }
 
-   
+    const today = new Date().toISOString().split('T')[0];
+    console.log('=== GENERATING REPORT ===');
+    console.log('Date range:', reportFilters.startDate, 'to', reportFilters.endDate);
+    console.log('Today is:', today);
 
-    // Get ALL employees from API
+    // Get ALL employees
     const employeesResponse = await employeeAPI.getAll();
-    const allEmployees = employeesResponse.data.employees || [];
+    const allEmployees = employeesResponse.data?.employees || [];
     
     if (allEmployees.length === 0) {
       alert('No employees found in the system');
@@ -317,29 +320,74 @@ const handleGenerateReport = async () => {
     let filteredEmployees = allEmployees;
     if (reportFilters.department && reportFilters.department !== '') {
       filteredEmployees = allEmployees.filter(emp => emp.department_name === reportFilters.department);
-      
     }
     
-    // USE LOCAL ATTENDANCE DATA DIRECTLY (not API call)
-    // Create a map from local attendance data
-    const attendanceMap = new Map();
-    attendanceData.forEach(record => {
-      let recordDate = record.date;
-      if (recordDate && recordDate.includes('T')) {
-        recordDate = recordDate.split('T')[0];
-      }
-      const key = `${record.employee_id}_${recordDate}`;
-      attendanceMap.set(key, record);
-     
+    console.log('Filtered employees:', filteredEmployees.length);
+    
+    // Get attendance records for the date range
+    const attendanceResponse = await attendanceAPI.getAll({
+      start_date: reportFilters.startDate,
+      end_date: reportFilters.endDate
     });
     
-    // Get all dates in the range
-    const startDate = new Date(reportFilters.startDate);
-    const endDate = new Date(reportFilters.endDate);
-    const dateRange = [];
-    let currentDate = new Date(startDate);
+    console.log('Attendance API Response:', attendanceResponse.data);
     
-    while (currentDate <= endDate) {
+    // Parse attendance data
+    let attendanceRecords = [];
+    if (attendanceResponse.data) {
+      if (attendanceResponse.data.attendance) {
+        attendanceRecords = attendanceResponse.data.attendance;
+        console.log('Found attendance.attendance array:', attendanceRecords.length);
+      } else if (Array.isArray(attendanceResponse.data)) {
+        attendanceRecords = attendanceResponse.data;
+        console.log('Found direct array:', attendanceRecords.length);
+      }
+    }
+    
+    // Log each attendance record for debugging
+    console.log('All attendance records:');
+    attendanceRecords.forEach((record, idx) => {
+      console.log(`  ${idx + 1}. Employee: ${record.employee_id}, Date: ${record.date}, Status: ${record.status}, Check-in: ${record.check_in_time}`);
+    });
+    
+    // Create a map of attendance records by employee_id and date
+    const attendanceMap = new Map();
+    
+    attendanceRecords.forEach(record => {
+      let recordDate = record.date;
+      if (recordDate) {
+        // Handle different date formats
+        if (recordDate.includes('T')) {
+          recordDate = recordDate.split('T')[0];
+        }
+        // Also handle if date is in different format
+        if (recordDate.includes(' ')) {
+          recordDate = recordDate.split(' ')[0];
+        }
+        
+        const key = `${record.employee_id}_${recordDate}`;
+        
+        console.log(`Mapping: ${key} -> Status: ${record.status}`);
+        
+        attendanceMap.set(key, {
+          status: record.status,
+          check_in_time: record.check_in_time || record.check_in,
+          check_out_time: record.check_out_time || record.check_out,
+          remarks: record.remarks,
+          employee_name: record.employee_name
+        });
+      }
+    });
+    
+    console.log('Attendance map size:', attendanceMap.size);
+    
+    // Get all dates in the selected range
+    const startDateObj = new Date(reportFilters.startDate);
+    const endDateObj = new Date(reportFilters.endDate);
+    const dateRange = [];
+    let currentDate = new Date(startDateObj);
+    
+    while (currentDate <= endDateObj) {
       const year = currentDate.getFullYear();
       const month = String(currentDate.getMonth() + 1).padStart(2, '0');
       const day = String(currentDate.getDate()).padStart(2, '0');
@@ -347,48 +395,102 @@ const handleGenerateReport = async () => {
       currentDate.setDate(currentDate.getDate() + 1);
     }
     
-  
+    console.log('Date range:', dateRange);
     
-    // Build report
+    // Build the report - Show ALL employees for EVERY day
     const formattedReport = [];
     
     for (const employee of filteredEmployees) {
       const employeeName = `${employee.first_name} ${employee.last_name}`;
       const employeeId = employee.employee_id;
+      const department = employee.department_name || 'Unknown';
+      const position = employee.position || 'Unknown';
+      
+      console.log(`Processing employee: ${employeeName} (${employeeId})`);
       
       for (const date of dateRange) {
         const key = `${employeeId}_${date}`;
-        const record = attendanceMap.get(key);
+        const attendanceData = attendanceMap.get(key);
         
         let status = 'Absent';
         let checkInTime = '-';
         let checkOutTime = '-';
         let workingHours = '-';
         let remarks = 'No attendance recorded';
+        let isWeekend = false;
         
-        if (record) {
-          status = record.status || 'Present';
-          checkInTime = record.check_in_time ? formatTime(record.check_in_time) : '-';
-          checkOutTime = record.check_out_time ? formatTime(record.check_out_time) : '-';
-          workingHours = calculateWorkingHours(record.check_in_time, record.check_out_time);
-          remarks = record.remarks || '';
+        // Check if it's a weekend
+        const dateObj = new Date(date);
+        const dayOfWeek = dateObj.getDay();
+        isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
         
+        if (isWeekend) {
+          status = 'Weekend';
+          remarks = 'Weekend - No attendance required';
+        } 
+        // If attendance record exists
+        else if (attendanceData) {
+          console.log(`  Found attendance for ${employeeName} on ${date}: Status=${attendanceData.status}`);
+          
+          // Use the actual status from database
+          const dbStatus = attendanceData.status;
+          
+          if (dbStatus === 'Present' || dbStatus === 'present') {
+            status = 'Present';
+            remarks = attendanceData.remarks || 'Present';
+          } 
+          else if (dbStatus === 'Delayed' || dbStatus === 'delayed' || dbStatus === 'Late') {
+            status = 'Delayed';
+            remarks = attendanceData.remarks || 'Late arrival';
+          } 
+          else if (dbStatus === 'Half Day' || dbStatus === 'half day') {
+            status = 'Half Day';
+            remarks = attendanceData.remarks || 'Half day';
+          } 
+          else if (dbStatus === 'On Leave' || dbStatus === 'on leave') {
+            status = 'On Leave';
+            remarks = attendanceData.remarks || 'On leave';
+          } 
+          else if (dbStatus === 'Absent' || dbStatus === 'absent') {
+            status = 'Absent';
+            remarks = attendanceData.remarks || 'Absent';
+          }
+          else {
+            status = dbStatus || 'Present';
+            remarks = attendanceData.remarks || status;
+          }
+          
+          // Format times
+          if (attendanceData.check_in_time && attendanceData.check_in_time !== '-') {
+            checkInTime = formatTime(attendanceData.check_in_time);
+          }
+          
+          if (attendanceData.check_out_time && attendanceData.check_out_time !== '-') {
+            checkOutTime = formatTime(attendanceData.check_out_time);
+          }
+          
+          // Calculate working hours if both times exist
+          if (attendanceData.check_in_time && attendanceData.check_out_time && 
+              attendanceData.check_in_time !== '-' && attendanceData.check_out_time !== '-') {
+            workingHours = calculateWorkingHours(attendanceData.check_in_time, attendanceData.check_out_time);
+          }
         } else {
-          console.log(`❌ Not found: ${employeeName} on ${date}`);
+          console.log(`  No attendance found for ${employeeName} on ${date}`);
         }
         
-        // Apply status filter
+        // Apply status filter ONLY if user selected a specific status
         if (reportFilters.status && reportFilters.status !== '') {
           if (status !== reportFilters.status) {
             continue;
           }
         }
         
+        // Add to report
         formattedReport.push({
           'Employee ID': employeeId,
           'Employee Name': employeeName,
-          'Department': employee.department_name || 'Unknown',
-          'Position': employee.position || 'Unknown',
+          'Department': department,
+          'Position': position,
           'Date': formatDate(date),
           'Day': new Date(date).toLocaleDateString('en-US', { weekday: 'short' }),
           'Check In Time': checkInTime,
@@ -399,26 +501,24 @@ const handleGenerateReport = async () => {
         });
       }
     }
-
     
-    // Show breakdown by date
-    const dateBreakdown = {};
-    formattedReport.forEach(r => {
-      if (!dateBreakdown[r.Date]) {
-        dateBreakdown[r.Date] = { Present: 0, Absent: 0, Delayed: 0, 'On Leave': 0 };
-      }
-      dateBreakdown[r.Date][r.Status]++;
+    console.log('Total report entries:', formattedReport.length);
+    
+    // Log summary of today's entries in the report
+    const todayEntries = formattedReport.filter(entry => entry.Date.includes(today) || entry.Date === formatDate(today));
+    console.log(`Today's entries in report: ${todayEntries.length}`);
+    todayEntries.forEach(entry => {
+      console.log(`  - ${entry['Employee Name']}: ${entry.Status}, Check-in: ${entry['Check In Time']}`);
     });
-   
     
     if (formattedReport.length === 0) {
-      alert('No attendance records found for the selected filters.');
+      alert('No records found for the selected filters.');
       setReportData([]);
       setIsReportModalOpen(true);
       return;
     }
     
-    // Sort report
+    // Sort report by employee name then date
     formattedReport.sort((a, b) => {
       if (a['Employee Name'] === b['Employee Name']) {
         return new Date(a['Date']) - new Date(b['Date']);
@@ -431,45 +531,55 @@ const handleGenerateReport = async () => {
 
   } catch (err) {
     console.error('Error generating report:', err);
-    alert('Failed to generate report: ' + (err.message));
+    alert('Failed to generate report: ' + (err.response?.data?.message || err.message));
   } finally {
     setReportLoading(false);
   }
 };
-  const calculateWorkingHours = (checkIn, checkOut) => {
-    if (!checkIn || !checkOut || checkIn === '-' || checkOut === '-') return '-';
+ const calculateWorkingHours = (checkIn, checkOut) => {
+  if (!checkIn || !checkOut || checkIn === '-' || checkOut === '-') return '-';
 
-    try {
-      const parseTime = (timeStr) => {
-        let hours = 0, minutes = 0;
-        if (timeStr.includes('AM') || timeStr.includes('PM')) {
-          const [time, period] = timeStr.split(' ');
-          let [hour, minute] = time.split(':');
-          hour = parseInt(hour);
-          minute = parseInt(minute);
-          if (period === 'PM' && hour !== 12) hour += 12;
-          if (period === 'AM' && hour === 12) hour = 0;
+  try {
+    const parseTime = (timeStr) => {
+      let hours = 0, minutes = 0;
+      
+      // Handle string time
+      const timeString = String(timeStr);
+      
+      if (timeString.includes('AM') || timeString.includes('PM')) {
+        const [time, period] = timeString.split(' ');
+        let [hour, minute] = time.split(':');
+        hour = parseInt(hour);
+        minute = parseInt(minute);
+        if (period === 'PM' && hour !== 12) hour += 12;
+        if (period === 'AM' && hour === 12) hour = 0;
+        return { hour, minute };
+      } else {
+        const parts = timeString.split(':');
+        if (parts.length >= 2) {
+          let hour = parseInt(parts[0]);
+          const minute = parseInt(parts[1]);
           return { hour, minute };
-        } else {
-          const [hour, minute] = timeStr.split(':');
-          return { hour: parseInt(hour), minute: parseInt(minute) };
         }
-      };
+        return { hour: 0, minute: 0 };
+      }
+    };
 
-      const inTime = parseTime(checkIn);
-      const outTime = parseTime(checkOut);
+    const inTime = parseTime(checkIn);
+    const outTime = parseTime(checkOut);
 
-      let totalMinutes = (outTime.hour * 60 + outTime.minute) - (inTime.hour * 60 + inTime.minute);
-      if (totalMinutes < 0) totalMinutes += 24 * 60;
+    let totalMinutes = (outTime.hour * 60 + outTime.minute) - (inTime.hour * 60 + inTime.minute);
+    if (totalMinutes < 0) totalMinutes += 24 * 60;
 
-      const hours = Math.floor(totalMinutes / 60);
-      const minutes = totalMinutes % 60;
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
 
-      return `${hours}h ${minutes}m`;
-    } catch (error) {
-      return '-';
-    }
-  };
+    return `${hours}h ${minutes}m`;
+  } catch (error) {
+    console.error('Error calculating hours:', error);
+    return '-';
+  }
+};
 
   const exportToExcel = () => {
     if (reportData.length === 0) {

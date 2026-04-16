@@ -7,10 +7,7 @@ import { brandingAPI } from './brandingAPI';
 export const experiencePDFService = {
   generatePDFBlob: async (pdfData) => {
     try {
-      console.log('Generating PDF Blob for Experience Letter', pdfData);
-      
-      // Validate required data
-      if (!pdfData) {
+    if (!pdfData) {
         throw new Error('PDF data is required');
       }
       
@@ -19,36 +16,33 @@ export const experiencePDFService = {
         const res = await brandingAPI.get();
         if (res.data?.success && res.data?.branding) {
           branding = res.data.branding;
-          console.log('Branding loaded successfully');
+        
         }
       } catch (err) { 
         console.warn("Failed to load branding, using defaults", err); 
       }
       
+      // FIX: Only use fallbacks if branding values don't exist
       const fullData = {
         ...pdfData,
         company: {
-          name: branding.company_name || "KosQu Technolab",
-          address: branding.company_address || "KosQu Technolab, Innovation Hub, Electronic City, Bengaluru - 560100",
-          email: branding.company_email || "info@kosqu.com",
-          website: branding.company_website || "www.kosqu.com"
+          name: branding.company_name || pdfData.company?.name || "KosQu Technolab",
+          address: branding.company_address || pdfData.company?.address || "KosQu Technolab, Innovation Hub, Electronic City, Bengaluru - 560100",
+          email: branding.company_email || pdfData.company?.email || "info@kosqu.com",
+          website: branding.company_website || pdfData.company?.website || "www.kosqu.com"
         },
         hr: {
-          name: branding.hr_name || "Ashish Thakur",
-          designation: branding.hr_designation || "Manager- HR",
-          signature: branding.signature_url ? brandingAPI.getImageUrl(branding.signature_url) : null
+          name: branding.hr_name || pdfData.hr?.name || "Ashish Thakur",
+          designation: branding.hr_designation || pdfData.hr?.designation || "Manager- HR",
+          signature: branding.signature_url ? brandingAPI.getImageUrl(branding.signature_url) : (pdfData.hr?.signature || null)
         },
-        logo: branding.logo_url ? brandingAPI.getImageUrl(branding.logo_url) : fallbackLogo,
-        stamp: branding.stamp_url ? brandingAPI.getImageUrl(branding.stamp_url) : fallbackStamp
+        logo: branding.logo_url ? brandingAPI.getImageUrl(branding.logo_url) : (pdfData.logo || fallbackLogo),
+        stamp: branding.stamp_url ? brandingAPI.getImageUrl(branding.stamp_url) : (pdfData.stamp || fallbackStamp)
       };
 
-      console.log('Generating HTML content...');
       const htmlContent = generateLetterHTML(fullData);
-      
-      console.log('Generating PDF...');
       const pdfBlob = await generatePDF(htmlContent);
       
-      console.log('PDF generated successfully');
       return pdfBlob;
 
     } catch (error) {
@@ -57,6 +51,8 @@ export const experiencePDFService = {
     }
   }
 };
+
+  
 
 const formatShortDate = (dateStr) => {
   if (!dateStr) return '';
@@ -232,8 +228,7 @@ const generatePDF = async (htmlContent) => {
       if (!PDFLib || typeof PDFLib !== 'function') {
         throw new Error('jsPDF library not properly loaded');
       }
-      
-      console.log('jsPDF loaded successfully');
+    
       const pdf = new PDFLib({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       
       // Create temporary container
@@ -255,7 +250,7 @@ const generatePDF = async (htmlContent) => {
         return new Promise((resolve) => {
           img.onload = resolve;
           img.onerror = (err) => {
-            console.warn('Image failed to load:', img.src);
+       
             resolve(); // Continue even if image fails
           };
         });

@@ -6,8 +6,7 @@ import fallbackStamp from '../assets/img/stamp.png';
 
 const pfDeclarationPDFService = {
   downloadPFDeclaration: async (formData) => {
-    console.log('Starting PDF generation...', formData);
-    
+   
     try {
       const branding = formData.branding || {};
       
@@ -96,7 +95,7 @@ const pfDeclarationPDFService = {
       const fileName = `PF_Declaration_${fullData.nameOfMember?.replace(/\s/g, '_') || 'Form11'}.pdf`;
       pdf.save(fileName);
       
-      console.log('PDF generated successfully with 2 pages');
+     
       return true;
       
     } catch (error) {
@@ -107,7 +106,7 @@ const pfDeclarationPDFService = {
   },
 
   generatePDFBlob: async (formData) => {
-    console.log('Generating PDF Blob...', formData);
+  
     
     try {
       const branding = formData.branding || {};
@@ -387,7 +386,7 @@ const generatePage1HTML = (data) => {
   `;
 };
 
-// PAGE 2 - ONLY UNDERTAKING AND DECLARATION
+// PAGE 2 - UNDERTAKING AND DECLARATION WITH EDITABLE FIELDS
 const generatePage2HTML = (data) => {
   const {
     nameOfMember = '',
@@ -405,6 +404,15 @@ const generatePage2HTML = (data) => {
     kycStatus = '',
     transferRequestGenerated = '',
     employerDate = '',
+    // NEW EDITABLE FIELDS FOR UNDERTAKING
+    undertakingText1 = '',
+    undertakingText2 = '',
+    undertakingText3 = '',
+    undertakingText4 = '',
+    // NEW EDITABLE FIELDS FOR DECLARATION
+    declarationTextA = '',
+    declarationTextB = '',
+    declarationTextC = '',
     company = {},
     hr = {},
     logo = '',
@@ -424,6 +432,12 @@ const generatePage2HTML = (data) => {
 
   const wasMember = wasEPFMember === 'yes' || wasEPSMember === 'yes';
 
+  // Default undertaking texts if not provided
+  const defaultUndertaking1 = "Certified that the particulars are true to the best of my knowledge.";
+  const defaultUndertaking2 = "I authorize EPFO to use my Aadhar for verification/authentication/KYC purpose for service delivery.";
+  const defaultUndertaking3 = "Kindly transfer the funds and service details, if applicable, from the previous PF account as declared above to the present P.F. Account. (The transfer would be possible only if the identified KYC detail approved by previous employer has been verified by present employer using his Digital Signature Certificate)";
+  const defaultUndertaking4 = "In case of changes in above details, the same will be intimate to employer at the earliest.";
+
   return `
     <div style="font-family: Arial, sans-serif; color: #000; line-height: 1.3; width: 210mm; margin: 0 auto;">
       
@@ -435,10 +449,18 @@ const generatePage2HTML = (data) => {
         <div style="font-size: 13pt; font-weight: bold; margin: 0 0 8px 0; border-bottom: 2px solid #000; padding-bottom: 3px;">UNDERTAKING</div>
         
         <div style="border: 1.5px solid #000; padding: 10px; margin: 8px 0;">
-          <p style="margin: 4px 0; font-size: 8.5pt; line-height: 1.35;"><strong>1)</strong> Certified that the particulars are true to the best of my knowledge.</p>
-          <p style="margin: 4px 0; font-size: 8.5pt; line-height: 1.35;"><strong>2)</strong> I authorize EPFO to use my Aadhar for verification/authentication/KYC purpose for service delivery.</p>
-          <p style="margin: 4px 0; font-size: 8.5pt; line-height: 1.35;"><strong>3)</strong> Kindly transfer the funds and service details, if applicable, from the previous PF account as declared above to the present P.F. Account. (The transfer would be possible only if the identified KYC detail approved by previous employer has been verified by present employer using his Digital Signature Certificate)</p>
-          <p style="margin: 4px 0; font-size: 8.5pt; line-height: 1.35;"><strong>4)</strong> In case of changes in above details, the same will be intimate to employer at the earliest.</p>
+          <p style="margin: 4px 0; font-size: 8.5pt; line-height: 1.35;">
+            <strong>1)</strong> ${undertakingText1 || defaultUndertaking1}
+          </p>
+          <p style="margin: 4px 0; font-size: 8.5pt; line-height: 1.35;">
+            <strong>2)</strong> ${undertakingText2 || defaultUndertaking2}
+          </p>
+          <p style="margin: 4px 0; font-size: 8.5pt; line-height: 1.35;">
+            <strong>3)</strong> ${undertakingText3 || defaultUndertaking3}
+          </p>
+          <p style="margin: 4px 0; font-size: 8.5pt; line-height: 1.35;">
+            <strong>4)</strong> ${undertakingText4 || defaultUndertaking4}
+          </p>
         </div>
         
         <!-- Signature of Member -->
@@ -459,12 +481,12 @@ const generatePage2HTML = (data) => {
         
         <div style="border: 1.5px solid #000; padding: 10px;">
           <p style="margin: 5px 0; font-size: 8.5pt; line-height: 1.35;">
-            <strong>A.</strong> The member ${memberSalutation || 'Mr./Ms./Mrs.'} ${nameOfMember || '________'} has joined on ${formatShortDate(joiningDate) || '________'} and has been allotted PF Number <strong>${pfNumber || '________'}</strong>
+            <strong>A.</strong> ${declarationTextA || `The member ${memberSalutation || 'Mr./Ms./Mrs.'} ${nameOfMember || '________'} has joined on ${formatShortDate(joiningDate) || '________'} and has been allotted PF Number <strong>${pfNumber || '________'}</strong>`}
           </p>
           
           ${!wasMember ? `
           <p style="margin: 5px 0; font-size: 8.5pt; line-height: 1.35;">
-            <strong>B.</strong> In case the person was earlier not a member of EPF Scheme, 1952 and EPS, 1995:
+            <strong>B.</strong> ${declarationTextB || "In case the person was earlier not a member of EPF Scheme, 1952 and EPS, 1995:"}
           </p>
           <p style="margin: 3px 0 3px 12px; font-size: 8.5pt;">
             Post allotment of UAN) The UAN allotted for the member is <strong>${uanNumber || '________'}</strong>
@@ -480,7 +502,7 @@ const generatePage2HTML = (data) => {
           
           ${wasMember ? `
           <p style="margin: 10px 0 3px 0; font-size: 8.5pt;">
-            <strong>C.</strong> In case the person was earlier a member of EPF Scheme, 1952 and EPS, 1995:
+            <strong>C.</strong> ${declarationTextC || "In case the person was earlier a member of EPF Scheme, 1952 and EPS, 1995:"}
           </p>
           <p style="margin: 3px 0; font-size: 8.5pt;">
             The above PF Account number/UAN of the member as mentioned in (A) above has been tagged with his/her UAN/Previous Member ID as declared by member.

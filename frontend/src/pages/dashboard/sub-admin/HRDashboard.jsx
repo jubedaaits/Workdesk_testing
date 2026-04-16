@@ -28,18 +28,16 @@ const HRDashboard = ({ setActiveTab }) => {
         const res = await dashboardAPI.getStats();
         const stats = res.data.stats || [];
 
-        // Find specific stats from the array safely and case-insensitively
-        const findStat = (title) => stats.find(s => s.title && s.title.toUpperCase() === title);
-        
-        const empStat = findStat('EMPLOYEES');
-        const internStat = findStat('INTERNSHIPS') || findStat('ACTIVE_JOBS');
-        const offerStat = findStat('OFFERS_SENT');
+        // Find specific stats from the array
+        const empStat = stats.find(s => s.title === 'EMPLOYEES');
+        const internStat = stats.find(s => s.title === 'INTERNSHIPS');
+        const offerStat = stats.find(s => s.title === 'OFFERS_SENT');
 
         setStatsData({
-          employees: empStat?.value || "0",
-          offersSent: offerStat?.value || "0",
-          activeJobs: internStat?.value || "0",
-          pendingTasks: internStat?.secondaryValue || "0"
+          employees: empStat ? empStat.value : "0",
+          offersSent: offerStat ? offerStat.value : "0",
+          activeJobs: internStat ? internStat.value : "0",
+          pendingTasks: internStat ? internStat.secondaryValue : "0"
         });
       } catch (err) {
         console.error("Error fetching dashboard stats:", err);
@@ -180,6 +178,20 @@ const HRDashboard = ({ setActiveTab }) => {
             <HiOutlineArrowRight />
           </div>
         </div>
+
+<div className="hr-tool-card" onClick={() => setActiveTab('declaration-form')}>
+  <div className="tool-icon-wrapper doc">
+    <HiOutlineDocumentText />
+  </div>
+  <div className="tool-info">
+    <h3>EPF Declaration Form</h3>
+    <p>Generate Employees' Provident Fund Declaration Form for {companyName}.</p>
+  </div>
+  <div className="tool-action">
+    <HiOutlineArrowRight />
+  </div>
+</div>
+
       </div>
     </div>
   );
